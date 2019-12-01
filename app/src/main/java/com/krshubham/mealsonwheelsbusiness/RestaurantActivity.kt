@@ -5,9 +5,9 @@ import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.database.*
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -16,7 +16,8 @@ import java.util.*
 
 class RestaurantActivity : AppCompatActivity() {
 
-    private lateinit var filePath: Uri
+    private lateinit var catFilePath: Uri
+    private lateinit var foodFilePath: Uri
     private lateinit var storageReference: StorageReference
     private lateinit var firebaseDatabase: FirebaseDatabase
     private lateinit var resId: String
@@ -32,7 +33,7 @@ class RestaurantActivity : AppCompatActivity() {
         categoryReference = firebaseDatabase.getReference("category")
 
         resId = intent.getStringExtra("id")!!
-            food_image_select.setOnClickListener {
+        food_image_select.setOnClickListener {
             pickImageFromGallery(FOOD_IMAGE_PICK)
         }
 
@@ -51,13 +52,14 @@ class RestaurantActivity : AppCompatActivity() {
         val progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Uploading...")
         progressDialog.show()
-        val ref: StorageReference = storageReference.child("food_images/${UUID.randomUUID()}.jpg")
-        ref.putFile(filePath)
+        val catName = category.text.toString()
+        val foodName = food.text.toString()
+        val ref: StorageReference = storageReference.child("food_images/${foodName}${resId}.jpg")
+        ref.putFile(foodFilePath)
             .addOnSuccessListener {
                 progressDialog.dismiss()
 
-                val catName = category.text.toString()
-                val foodName = food.text.toString()
+
                 val price = price.text.toString()
                 val rating = rating.text.toString()
                 ref.downloadUrl.addOnSuccessListener {
@@ -66,51 +68,65 @@ class RestaurantActivity : AppCompatActivity() {
                     val food = Food(foodName, price, rating, image)
 
                     val foodReference = firebaseDatabase.getReference("food")
-                    val foodKey = foodName.toLowerCase(Locale.getDefault()).replace(" ","") + resId
+                    val foodKey = foodName.toLowerCase(Locale.getDefault()).replace(" ", "") + resId
 
-                   foodReference.addListenerForSingleValueEvent(object : ValueEventListener{
-                       override fun onCancelled(p0: DatabaseError) {
+                    foodReference.addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onCancelled(p0: DatabaseError) {
 
-                       }
+                        }
 
-                       override fun onDataChange(p0: DataSnapshot) {
+                        override fun onDataChange(p0: DataSnapshot) {
 
-                           if(p0.hasChild(foodKey)){
+                            if (p0.hasChild(foodKey)) {
 
-                               val map = mapOf("name" to foodName, "price" to price, "rating" to rating, "image" to image )
-                               foodReference.child(foodKey).updateChildren(map)
-                           }
-                           else{
+                                val map = mapOf(
+                                    "name" to foodName,
+                                    "price" to price,
+                                    "rating" to rating,
+                                    "image" to image
+                                )
+                                foodReference.child(foodKey).updateChildren(map)
+                            } else {
 
-                               foodReference.child(foodKey).setValue(food).addOnSuccessListener {
+                                foodReference.child(foodKey).setValue(food).addOnSuccessListener {
 
-                                   val catRef = storageReference.child("category_images/${UUID.randomUUID()}.jpg")
-                                   catRef.putFile(filePath)
-                                       .addOnSuccessListener {
+                                    val catRef =
+                                        storageReference.child("category_images/${catName}${resId}.jpg")
+                                    catRef.putFile(catFilePath)
+                                        .addOnSuccessListener {
 
-                                           ref.downloadUrl.addOnSuccessListener {cat ->
+                                            catRef.downloadUrl.addOnSuccessListener { cat ->
 
-                                               val catKey = catName.toLowerCase(Locale.getDefault()).replace(" ","") + resId
-                                               categoryReference.child(catKey).child("name").setValue(catName)
-                                               categoryReference.child(catKey).child("image").setValue(cat.toString())
-                                               categoryReference.child(catKey).child(foodKey).setValue(true)
-                                                   .addOnSuccessListener {
+                                                val catKey =
+                                                    catName.toLowerCase(Locale.getDefault()).replace(
+                                                        " ",
+                                                        ""
+                                                    ) + resId
+                                                categoryReference.child(catKey).child("name")
+                                                    .setValue(catName)
+                                                categoryReference.child(catKey).child("image")
+                                                    .setValue(cat.toString())
+                                                categoryReference.child(catKey).child(foodKey)
+                                                    .setValue(true)
+                                                    .addOnSuccessListener {
 
-                                                       val resReference = firebaseDatabase.getReference("restaurant").child(intent.getStringExtra("id")!!)
-                                                       resReference.child("categories").child(catKey).setValue(true)
-                                                   }
-                                           }
+                                                        val resReference =
+                                                            firebaseDatabase.getReference("restaurant")
+                                                                .child(intent.getStringExtra("id")!!)
+                                                        resReference.child("categories")
+                                                            .child(catKey).setValue(true)
+                                                    }
+                                            }
 
 
-                                       }
+                                        }
 
 
-                               }
-                           }
-                       }
+                                }
+                            }
+                        }
 
-                   })
-
+                    })
 
 
                 }
@@ -131,8 +147,6 @@ class RestaurantActivity : AppCompatActivity() {
                 progressDialog.setMessage("Uploaded " + progress.toInt() + "%")
             }
     }
-
-
 
 
     private fun pickImageFromGallery(code: Int) {
@@ -180,12 +194,11 @@ class RestaurantActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK && requestCode == FOOD_IMAGE_PICK) {
-            filePath = data?.data!!
-            imageView2.setImageURI(filePath)
-        }
-        else  if (resultCode == Activity.RESULT_OK && requestCode == CAT_IMAGE_PICK) {
-            filePath = data?.data!!
-            category_image.setImageURI(filePath)
+            foodFilePath = data?.data!!
+            imageView2.setImageURI(foodFilePath)
+        } else if (resultCode == Activity.RESULT_OK && requestCode == CAT_IMAGE_PICK) {
+            catFilePath = data?.data!!
+            category_image.setImageURI(catFilePath)
         }
     }
 

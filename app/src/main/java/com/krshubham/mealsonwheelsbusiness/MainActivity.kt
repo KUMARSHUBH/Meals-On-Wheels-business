@@ -27,7 +27,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var name: String
     private lateinit var lat: String
     private lateinit var lng: String
-    private lateinit var rating:String
+    private lateinit var rating: String
     private lateinit var image: String
     private lateinit var phone: String
 
@@ -47,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                     PackageManager.PERMISSION_DENIED
                 ) {
                     //permission deniedA
-                    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE);
+                    val permissions = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
                     //show popup to request runtime permission
                     requestPermissions(permissions, PERMISSION_CODE)
                 } else {
@@ -64,23 +64,10 @@ class MainActivity : AppCompatActivity() {
 
             register()
 
-//            name = res_name.text.toString()
-//            lat = res_lat.text.toString()
-//            lng = res_lng.text.toString()
-//            rating = res_rating.text.toString()
-//            phone = res_phone.text.toString()
-////            image = ref.downloadUrl.toString()
-//
-//            val restaurant = Restaurant(name, lat, lng, rating,phone)
-//
-//            firebaseDatabase.getReference("restaurant").push().setValue(restaurant)
-
         }
 
 
-
     }
-
 
 
     private fun pickImageFromGallery() {
@@ -136,7 +123,8 @@ class MainActivity : AppCompatActivity() {
         val progressDialog = ProgressDialog(this)
         progressDialog.setTitle("Uploading...")
         progressDialog.show()
-        val ref: StorageReference = storageReference.child("restaurant_images/${UUID.randomUUID()}.jpg")
+        val ref: StorageReference =
+            storageReference.child("restaurant_images/${UUID.randomUUID()}.jpg")
         ref.putFile(filePath)
             .addOnSuccessListener {
                 progressDialog.dismiss()
@@ -149,13 +137,14 @@ class MainActivity : AppCompatActivity() {
                 ref.downloadUrl.addOnSuccessListener {
 
                     image = it.toString()
-                    val restaurant = Restaurant(name, lat, lng, rating,phone,image)
+
 
                     val resReference = firebaseDatabase.getReference("restaurant")
-                    val key = resReference.push().key
-                    resReference.child(key!!).setValue(restaurant)
-                    val intent = Intent(this,RestaurantActivity::class.java)
-                    intent.putExtra("id",key )
+                    val key = resReference.push().key!!
+                    val restaurant = Restaurant(key, name, lat, lng, rating, phone, image)
+                    resReference.child(key).setValue(restaurant)
+                    val intent = Intent(this, RestaurantActivity::class.java)
+                    intent.putExtra("id", key)
                     startActivity(intent)
                 }
 
