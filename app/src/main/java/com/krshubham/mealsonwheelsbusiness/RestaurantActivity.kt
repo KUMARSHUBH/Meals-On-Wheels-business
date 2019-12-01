@@ -110,11 +110,9 @@ class RestaurantActivity : AppCompatActivity() {
                                                     .setValue(true)
                                                     .addOnSuccessListener {
 
-                                                        val resReference =
-                                                            firebaseDatabase.getReference("restaurant")
-                                                                .child(intent.getStringExtra("id")!!)
-                                                        resReference.child("categories")
-                                                            .child(catKey).setValue(true)
+                                                            firebaseDatabase.getReference("restaurantCategories")
+                                                                .child(intent.getStringExtra("id")!!).child(catKey).setValue(true)
+
                                                     }
                                             }
 

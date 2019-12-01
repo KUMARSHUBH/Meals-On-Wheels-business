@@ -7,5 +7,6 @@ data class Restaurant(
     val lng: String = "",
     val rating: String = "",
     val phone: String = "",
-    val image: String = ""
+    val image: String = "",
+    val perPersonCost: String = ""
 )
